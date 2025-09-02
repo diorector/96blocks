@@ -43,7 +43,9 @@ export function NotificationManager({ isSessionActive, onPermissionChange }: Not
     }
 
     try {
+      console.log("현재 알림 권한 상태:", Notification.permission)
       const result = await Notification.requestPermission()
+      console.log("권한 요청 결과:", result)
       setPermission(result)
       const granted = result === "granted"
       setNotificationsEnabled(granted)
@@ -51,14 +53,23 @@ export function NotificationManager({ isSessionActive, onPermissionChange }: Not
 
       if (granted) {
         // Show test notification
-        new Notification("15분 플래너", {
+        console.log("테스트 알림 전송 시도")
+        const notification = new Notification("15분 플래너", {
           body: "알림이 활성화되었습니다!",
           icon: "/icon-192x192.png",
           badge: "/icon-192x192.png",
+          requireInteraction: false,
+          tag: "test-notification",
         })
+        
+        notification.onclick = () => {
+          console.log("알림 클릭됨")
+          window.focus()
+        }
       }
     } catch (error) {
       console.error("Error requesting notification permission:", error)
+      alert("알림 권한 요청 중 오류가 발생했습니다: " + error)
     }
   }
 
@@ -176,11 +187,39 @@ export function NotificationManager({ isSessionActive, onPermissionChange }: Not
             variant="outline"
             size="sm"
             onClick={() => {
-              new Notification("15분 플래너", {
-                body: "테스트 알림입니다!",
-                icon: "/icon-192x192.png",
-                badge: "/icon-192x192.png",
-              })
+              try {
+                console.log("테스트 알림 버튼 클릭됨")
+                console.log("현재 권한 상태:", Notification.permission)
+                
+                const notification = new Notification("15분 플래너 테스트", {
+                  body: "테스트 알림입니다! 알림이 정상적으로 작동합니다.",
+                  icon: "/icon-192x192.png",
+                  badge: "/icon-192x192.png",
+                  requireInteraction: false,
+                  tag: "test-button-notification",
+                  timestamp: Date.now(),
+                })
+                
+                notification.onclick = () => {
+                  console.log("테스트 알림 클릭됨")
+                  window.focus()
+                  notification.close()
+                }
+                
+                notification.onshow = () => {
+                  console.log("알림이 표시되었습니다")
+                }
+                
+                notification.onerror = (error) => {
+                  console.error("알림 오류:", error)
+                  alert("알림 표시 중 오류가 발생했습니다")
+                }
+                
+                console.log("알림 객체 생성 완료:", notification)
+              } catch (error) {
+                console.error("테스트 알림 생성 오류:", error)
+                alert("알림 생성 중 오류가 발생했습니다: " + error)
+              }
             }}
           >
             테스트 알림

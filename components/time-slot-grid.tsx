@@ -97,78 +97,50 @@ export function TimeSlotGrid({ session, userId }: TimeSlotGridProps) {
   }
 
   const getSlotColor = (slot: TimeSlot) => {
-    if (!slot.condition_score) return "bg-muted"
+    if (!slot.condition_score) return ""
 
     const colors = [
-      "bg-red-500", // 1 - 매우 안좋음
-      "bg-red-400", // 2 - 꽤 안좋음
-      "bg-orange-400", // 3 - 약간 안좋음
-      "bg-yellow-400", // 4 - 중립
-      "bg-green-400", // 5 - 약간 좋음
-      "bg-green-500", // 6 - 꽤 좋음
-      "bg-green-600", // 7 - 매우 좋음
+      "bg-gray-100", // 1
+      "bg-gray-200", // 2
+      "bg-gray-300", // 3
+      "bg-gray-400", // 4
+      "bg-gray-500 text-white", // 5
+      "bg-gray-700 text-white", // 6
+      "bg-gray-900 text-white", // 7
     ]
 
-    return colors[slot.condition_score - 1] || "bg-muted"
+    return colors[slot.condition_score - 1] || ""
   }
 
   return (
     <>
-      <div className="space-y-4">
-        <h3 className="font-semibold text-lg">시간 슬롯</h3>
+      <div className="space-y-3">
+        <h3 className="font-medium text-sm text-muted-foreground">시간 기록</h3>
 
-        <div className="grid grid-cols-4 gap-1 max-h-96 overflow-y-auto">
+        <div className="grid grid-cols-4 gap-0.5">
           {timeSlots.map((slot, index) => (
-            <Button
+            <button
               key={index}
-              variant="outline"
-              size="sm"
-              className={`h-12 p-1 text-xs flex flex-col justify-center ${getSlotColor(slot)}`}
+              className={`h-10 p-1 text-xs border border-border rounded-sm hover:border-primary/30 hover:bg-accent/50 transition-colors ${getSlotColor(slot)}`}
               onClick={() => handleSlotClick(slot)}
             >
-              <div className="font-mono">{format(new Date(slot.slot_time), "HH:mm")}</div>
-              {slot.activity && <div className="truncate w-full text-center">{slot.activity.slice(0, 6)}</div>}
-            </Button>
+              <div className="font-mono text-[10px]">{format(new Date(slot.slot_time), "HH:mm")}</div>
+              {slot.activity && <div className="truncate text-[9px] mt-0.5">{slot.activity.slice(0, 6)}</div>}
+            </button>
           ))}
         </div>
 
-        <Card className="bg-muted/50">
-          <CardContent className="p-3">
-            <div className="text-xs space-y-1">
-              <div className="font-semibold mb-2">컨디션 색상 가이드:</div>
-              <div className="grid grid-cols-2 gap-1 text-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-red-500 rounded"></div>
-                  <span>매우 안좋음</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-red-400 rounded"></div>
-                  <span>꽤 안좋음</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-orange-400 rounded"></div>
-                  <span>약간 안좋음</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-yellow-400 rounded"></div>
-                  <span>중립</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-400 rounded"></div>
-                  <span>약간 좋음</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-500 rounded"></div>
-                  <span>꽤 좋음</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-600 rounded"></div>
-                  <span>매우 좋음</span>
-                </div>
+        <div className="flex gap-2 text-[10px] text-muted-foreground">
+          <span>컨디션:</span>
+          <div className="flex gap-1">
+            {[1, 2, 3, 4, 5, 6, 7].map((level) => (
+              <div key={level} className="flex items-center gap-0.5">
+                <div className={`w-2 h-2 rounded-sm ${level <= 4 ? `bg-gray-${level * 100}` : 'bg-gray-900'}`}></div>
+                <span>{level}</span>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            ))}
+          </div>
+        </div>
       </div>
 
       <TimeSlotModal

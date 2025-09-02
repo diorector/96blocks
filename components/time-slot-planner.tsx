@@ -9,6 +9,7 @@ import { TimeSlotGrid } from "@/components/time-slot-grid"
 import { DayControls } from "@/components/day-controls"
 import { NotificationManager } from "@/components/notification-manager"
 import { DataAnalytics } from "@/components/data-analytics"
+import { InstallPrompt } from "@/components/install-prompt"
 import { createClient } from "@/lib/supabase/client"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
@@ -125,12 +126,13 @@ export function TimeSlotPlanner({ user }: TimeSlotPlannerProps) {
   }
 
   return (
-    <div className="container mx-auto max-w-md p-4 space-y-4">
-      <Card>
+    <div className="container mx-auto max-w-md p-4 space-y-3">
+      <InstallPrompt />
+      <Card className="border shadow-none">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl font-bold">{format(new Date(), "M월 d일 EEEE", { locale: ko })}</CardTitle>
-            <Button variant="ghost" size="sm" onClick={handleSignOut}>
+            <CardTitle className="text-lg">{format(new Date(), "M월 d일 EEEE", { locale: ko })}</CardTitle>
+            <Button variant="ghost" size="sm" onClick={handleSignOut} className="h-8 px-2 text-xs">
               로그아웃
             </Button>
           </div>

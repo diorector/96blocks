@@ -1,10 +1,9 @@
 // 메타데이터 경고 수정 - viewport와 themeColor를 별도로 export
 // 2025-09-03 02:30 KST - metadata 설정 분리
+// 2025-09-03 03:07 KST - Pretendard 폰트 적용
 
 import type React from "react"
 import type { Metadata, Viewport } from "next"
-import { GeistSans } from "geist/font/sans"
-import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import "./globals.css"
@@ -79,8 +78,14 @@ export default function RootLayout({
             `,
           }}
         />
+        <link
+          rel="stylesheet"
+          as="style"
+          crossOrigin="anonymous"
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+        />
       </head>
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+      <body className="font-sans antialiased">
         <Suspense fallback={null}>{children}</Suspense>
         <Analytics />
       </body>
