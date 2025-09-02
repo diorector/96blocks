@@ -1,3 +1,6 @@
+// NotificationManager - Service Worker 연동
+// 2025-09-03 04:18 KST - iOS 백그라운드 알림 지원
+
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
@@ -73,21 +76,47 @@ export function NotificationManager({ isSessionActive, onPermissionChange }: Not
     }
   }
 
-  const startNotificationSchedule = useCallback(() => {
-    if (intervalId) return // Already running
-
+  const startNotificationSchedule = useCallback(async () => {
+    // Service Worker를 통해 알림 스케줄 시작
+    if ('serviceWorker' in navigator) {
+      try {
+        const registration = await navigator.serviceWorker.ready
+        const messageChannel = new MessageChannel()
+        
+        registration.active?.postMessage(
+          { type: 'START_NOTIFICATIONS' },
+          [messageChannel.port2]
+        )
+        
+        messageChannel.port1.onmessage = (event) => {
+          console.log('Service Worker 응답:', event.data)
+        }
+        
+        console.log('Service Worker 알림 시작')
+      } catch (error) {
+        console.error('Service Worker 알림 시작 실패:', error)
+        // Fallback to regular timer for desktop
+        startFallbackSchedule()
+      }
+    } else {
+      // Service Worker 미지원 시 기존 방식
+      startFallbackSchedule()
+    }
+  }, [permission])
+  
+  const startFallbackSchedule = useCallback(() => {
+    if (intervalId) return
+    
     const scheduleNextNotification = () => {
       const now = new Date()
       const minutes = now.getMinutes()
-      const seconds = now.getSeconds()
-
-      // Calculate next notification time (15, 30, 45, or 0 minutes)
+      
       let nextMinutes: number
       if (minutes < 15) nextMinutes = 15
       else if (minutes < 30) nextMinutes = 30
       else if (minutes < 45) nextMinutes = 45
-      else nextMinutes = 60 // Next hour
-
+      else nextMinutes = 60
+      
       const nextTime = new Date(now)
       if (nextMinutes === 60) {
         nextTime.setHours(nextTime.getHours() + 1)
@@ -97,11 +126,10 @@ export function NotificationManager({ isSessionActive, onPermissionChange }: Not
       }
       nextTime.setSeconds(0)
       nextTime.setMilliseconds(0)
-
+      
       const timeUntilNext = nextTime.getTime() - now.getTime()
-
+      
       const timeoutId = setTimeout(() => {
-        // Show notification
         if (permission === "granted") {
           new Notification("15분 플래너", {
             body: `${nextTime.getHours().toString().padStart(2, "0")}:${nextTime.getMinutes().toString().padStart(2, "0")} 시간 기록을 업데이트하세요!`,
@@ -111,18 +139,34 @@ export function NotificationManager({ isSessionActive, onPermissionChange }: Not
             requireInteraction: false,
           })
         }
-
-        // Schedule next notification
         scheduleNextNotification()
       }, timeUntilNext)
-
+      
       setIntervalId(timeoutId)
     }
-
+    
     scheduleNextNotification()
   }, [permission, intervalId])
 
-  const stopNotificationSchedule = useCallback(() => {
+  const stopNotificationSchedule = useCallback(async () => {
+    // Service Worker 알림 중지
+    if ('serviceWorker' in navigator) {
+      try {
+        const registration = await navigator.serviceWorker.ready
+        const messageChannel = new MessageChannel()
+        
+        registration.active?.postMessage(
+          { type: 'STOP_NOTIFICATIONS' },
+          [messageChannel.port2]
+        )
+        
+        console.log('Service Worker 알림 중지')
+      } catch (error) {
+        console.error('Service Worker 알림 중지 실패:', error)
+      }
+    }
+    
+    // 기존 타이머도 중지
     if (intervalId) {
       clearTimeout(intervalId)
       setIntervalId(null)
@@ -186,36 +230,39 @@ export function NotificationManager({ isSessionActive, onPermissionChange }: Not
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
+            onClick={async () => {
               try {
                 console.log("테스트 알림 버튼 클릭됨")
                 console.log("현재 권한 상태:", Notification.permission)
                 
-                const notification = new Notification("15분 플래너 테스트", {
-                  body: "테스트 알림입니다! 알림이 정상적으로 작동합니다.",
-                  icon: "/icon-192x192.png",
-                  badge: "/icon-192x192.png",
-                  requireInteraction: false,
-                  tag: "test-button-notification",
-                  timestamp: Date.now(),
-                })
-                
-                notification.onclick = () => {
-                  console.log("테스트 알림 클릭됨")
-                  window.focus()
-                  notification.close()
+                // Service Worker를 통한 알림 테스트
+                if ('serviceWorker' in navigator) {
+                  const registration = await navigator.serviceWorker.ready
+                  const messageChannel = new MessageChannel()
+                  
+                  registration.active?.postMessage(
+                    { type: 'TEST_NOTIFICATION' },
+                    [messageChannel.port2]
+                  )
+                  
+                  messageChannel.port1.onmessage = (event) => {
+                    console.log('테스트 알림 전송 완료:', event.data)
+                  }
+                } else {
+                  // Fallback
+                  const notification = new Notification("15분 플래너 테스트", {
+                    body: "테스트 알림입니다! 알림이 정상적으로 작동합니다.",
+                    icon: "/icon-192x192.png",
+                    badge: "/icon-192x192.png",
+                    requireInteraction: false,
+                    tag: "test-button-notification",
+                  })
+                  
+                  notification.onclick = () => {
+                    window.focus()
+                    notification.close()
+                  }
                 }
-                
-                notification.onshow = () => {
-                  console.log("알림이 표시되었습니다")
-                }
-                
-                notification.onerror = (error) => {
-                  console.error("알림 오류:", error)
-                  alert("알림 표시 중 오류가 발생했습니다")
-                }
-                
-                console.log("알림 객체 생성 완료:", notification)
               } catch (error) {
                 console.error("테스트 알림 생성 오류:", error)
                 alert("알림 생성 중 오류가 발생했습니다: " + error)
