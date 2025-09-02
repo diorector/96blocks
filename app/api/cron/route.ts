@@ -2,15 +2,13 @@
 // 2025-09-03 05:00 KST - Vercel Cron으로 15분마다 푸시 전송
 
 import { NextRequest, NextResponse } from "next/server"
-import webpush from "web-push"
 import { createClient } from "@/lib/supabase/server"
 
-// VAPID 설정
-webpush.setVapidDetails(
-  `mailto:${process.env.VAPID_EMAIL || 'your-email@example.com'}`,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-)
+// Dynamic import for web-push (Node.js only)
+const getWebPush = async () => {
+  const webpush = await import('web-push')
+  return webpush.default
+}
 
 export async function GET(request: NextRequest) {
   // Vercel Cron 인증 확인
@@ -20,6 +18,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const webpush = await getWebPush()
+    
+    // VAPID 설정
+    webpush.setVapidDetails(
+      `mailto:${process.env.VAPID_EMAIL || 'your-email@example.com'}`,
+      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+      process.env.VAPID_PRIVATE_KEY!
+    )
     const now = new Date()
     const hours = now.getHours()
     const minutes = now.getMinutes()
@@ -111,6 +117,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Vercel Edge Function 설정
-export const runtime = 'edge'
+// Node.js Runtime 사용 (web-push 호환성)
+export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'

@@ -2,18 +2,26 @@
 // 2025-09-03 04:40 KST - 서버에서 푸시 알림 전송
 
 import { NextRequest, NextResponse } from "next/server"
-import webpush from "web-push"
 import { createClient } from "@/lib/supabase/server"
 
-// VAPID 설정
-webpush.setVapidDetails(
-  "mailto:your-email@example.com",
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "BKY2YXzaEiApOt9vdivE6GDPnJqZ8-JXn1CVLXeuvqzDqh3vC0D7vRlLHG4oQD3qM3lnRNqPqBxEKE9rFJN9xYI",
-  process.env.VAPID_PRIVATE_KEY || "YOUR_PRIVATE_KEY_HERE"
-)
+// Dynamic import for web-push (Node.js only)
+const getWebPush = async () => {
+  const webpush = await import('web-push')
+  return webpush.default
+}
+
 
 export async function POST(request: NextRequest) {
   try {
+    const webpush = await getWebPush()
+    
+    // VAPID 설정
+    webpush.setVapidDetails(
+      "mailto:your-email@example.com",
+      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "BKY2YXzaEiApOt9vdivE6GDPnJqZ8-JXn1CVLXeuvqzDqh3vC0D7vRlLHG4oQD3qM3lnRNqPqBxEKE9rFJN9xYI",
+      process.env.VAPID_PRIVATE_KEY || "YOUR_PRIVATE_KEY_HERE"
+    )
+    
     const { userId, title, body } = await request.json()
     
     const supabase = await createClient()
