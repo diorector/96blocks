@@ -184,3 +184,8 @@
 .condition-5 { @apply bg-gray-400 border-gray-600; }
 .condition-6 { @apply bg-gray-500 border-gray-700 text-white; }
 .condition-7 { @apply bg-gray-900 border-gray-900 text-white; }
+
+/* 모바일 안전 영역 */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+}

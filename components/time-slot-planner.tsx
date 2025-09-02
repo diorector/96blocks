@@ -1,5 +1,8 @@
 "use client"
 
+// TimeSlotPlanner - 날짜별 데이터 보기 기능 추가
+// 2025-09-03 03:24 KST - 날짜 네비게이션 기능 구현
+
 import { useState, useEffect } from "react"
 import type { User } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
@@ -11,9 +14,11 @@ import { NotificationManager } from "@/components/notification-manager"
 import { DataAnalytics } from "@/components/data-analytics"
 import { InstallPrompt } from "@/components/install-prompt"
 import { createClient } from "@/lib/supabase/client"
-import { format } from "date-fns"
+import { format, addDays, subDays, startOfDay } from "date-fns"
 import { ko } from "date-fns/locale"
-import { Calendar, BarChart3, LogIn } from "lucide-react"
+import { Calendar, BarChart3, LogIn, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react"
+import { Calendar as CalendarPicker } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 interface DailySession {
   id: string
@@ -30,16 +35,19 @@ export function TimeSlotPlanner({ user }: TimeSlotPlannerProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(user || null)
   const [currentSession, setCurrentSession] = useState<DailySession | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  const [calendarOpen, setCalendarOpen] = useState(false)
   const supabase = createClient()
   const today = format(new Date(), "yyyy-MM-dd")
+  const formattedSelectedDate = format(selectedDate, "yyyy-MM-dd")
 
   useEffect(() => {
     if (!user) {
       checkAuth()
     } else {
-      loadTodaySession()
+      loadSessionForDate()
     }
-  }, [user])
+  }, [user, selectedDate])
 
   const checkAuth = async () => {
     try {
@@ -48,7 +56,7 @@ export function TimeSlotPlanner({ user }: TimeSlotPlannerProps) {
       } = await supabase.auth.getUser()
       setCurrentUser(authUser)
       if (authUser) {
-        loadTodaySession(authUser.id)
+        loadSessionForDate(authUser.id)
       } else {
         setIsLoading(false)
       }
@@ -58,16 +66,17 @@ export function TimeSlotPlanner({ user }: TimeSlotPlannerProps) {
     }
   }
 
-  const loadTodaySession = async (userId?: string) => {
+  const loadSessionForDate = async (userId?: string) => {
     const targetUserId = userId || currentUser?.id
     if (!targetUserId) return
 
+    setIsLoading(true)
     try {
       const { data, error } = await supabase
         .from("daily_sessions")
         .select("*")
         .eq("user_id", targetUserId)
-        .eq("date", today)
+        .eq("date", formattedSelectedDate)
         .single()
 
       if (error && error.code !== "PGRST116") {
@@ -125,13 +134,20 @@ export function TimeSlotPlanner({ user }: TimeSlotPlannerProps) {
     )
   }
 
+  const handleDateChange = (days: number) => {
+    const newDate = days === 0 ? new Date() : addDays(selectedDate, days)
+    setSelectedDate(newDate)
+  }
+
+  const isToday = format(selectedDate, "yyyy-MM-dd") === today
+
   return (
     <div className="container mx-auto max-w-md p-4 space-y-3">
       <InstallPrompt />
       <Card className="border shadow-none">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">{format(new Date(), "M월 d일 EEEE", { locale: ko })}</CardTitle>
+            <CardTitle className="text-lg">{format(selectedDate, "M월 d일 EEEE", { locale: ko })}</CardTitle>
             <Button variant="ghost" size="sm" onClick={handleSignOut} className="h-8 px-2 text-xs">
               로그아웃
             </Button>
@@ -139,11 +155,11 @@ export function TimeSlotPlanner({ user }: TimeSlotPlannerProps) {
         </CardHeader>
       </Card>
 
-      <Tabs defaultValue="today" className="w-full">
+      <Tabs defaultValue="daily" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="today" className="flex items-center gap-2">
+          <TabsTrigger value="daily" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            오늘
+            일별 기록
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
@@ -151,14 +167,75 @@ export function TimeSlotPlanner({ user }: TimeSlotPlannerProps) {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="today" className="space-y-4">
+        <TabsContent value="daily" className="space-y-4">
+          {/* 날짜 네비게이션 */}
+          <Card className="border shadow-none">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDateChange(-1)}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                <div className="flex items-center gap-2">
+                  <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8 px-3 text-xs font-medium">
+                        <CalendarDays className="h-3 w-3 mr-1" />
+                        {format(selectedDate, "yyyy.MM.dd")}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="center">
+                      <CalendarPicker
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => {
+                          if (date) {
+                            setSelectedDate(date)
+                            setCalendarOpen(false)
+                          }
+                        }}
+                        locale={ko}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  
+                  {!isToday && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDateChange(0)}
+                      className="h-8 px-2 text-xs"
+                    >
+                      오늘
+                    </Button>
+                  )}
+                </div>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDateChange(1)}
+                  className="h-8 w-8 p-0"
+                  disabled={format(addDays(selectedDate, 1), "yyyy-MM-dd") > today}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardContent className="pt-6 space-y-4">
               <DayControls
                 session={currentSession}
                 onSessionUpdate={setCurrentSession}
                 userId={currentUser.id}
-                today={today}
+                today={formattedSelectedDate}
               />
 
               <NotificationManager isSessionActive={!!isSessionActive} />

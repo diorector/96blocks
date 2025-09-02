@@ -1,12 +1,16 @@
+// TimeSlotModal - 모바일 최적화 및 UI 개선
+// 2025-09-03 03:45 KST - 키보드 겹침 해결 완료, 70vh 높이 제한
+
 "use client"
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { createClient } from "@/lib/supabase/client"
 import { format } from "date-fns"
+import { Clock, Hash } from "lucide-react"
 
 interface TimeSlot {
   id?: string
@@ -63,6 +67,7 @@ export function TimeSlotModal({ isOpen, onClose, slot, sessionId, userId, onUpda
         if (error) throw error
         onUpdate(data)
       }
+      onClose()
     } catch (error) {
       console.error("Error saving time slot:", error)
     } finally {
@@ -84,6 +89,7 @@ export function TimeSlotModal({ isOpen, onClose, slot, sessionId, userId, onUpda
         activity: undefined,
         condition_score: undefined,
       })
+      onClose()
     } catch (error) {
       console.error("Error deleting time slot:", error)
     } finally {
@@ -91,66 +97,97 @@ export function TimeSlotModal({ isOpen, onClose, slot, sessionId, userId, onUpda
     }
   }
 
-  const conditionLabels = ["매우 안좋음", "꽤 안좋음", "약간 안좋음", "중립", "약간 좋음", "꽤 좋음", "매우 좋음"]
-
   if (!slot) return null
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{format(new Date(slot.slot_time), "HH:mm")} 슬롯</DialogTitle>
-        </DialogHeader>
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent side="bottom" className="h-auto max-h-[70vh] overflow-y-auto rounded-t-xl">
+        <SheetHeader className="pb-3">
+          <SheetTitle className="flex items-center gap-2 text-base">
+            <Clock className="h-4 w-4" />
+            {format(new Date(slot.slot_time), "HH:mm")} 기록
+          </SheetTitle>
+        </SheetHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 pb-8">
+          {/* 활동 입력 */}
           <div className="space-y-2">
-            <Label htmlFor="activity">활동 내용</Label>
+            <Label htmlFor="activity" className="text-xs text-muted-foreground">
+              무엇을 했나요?
+            </Label>
             <Textarea
               id="activity"
-              placeholder="지난 15분 동안 무엇을 했나요?"
+              placeholder="활동 내용을 입력하세요"
               value={activity}
               onChange={(e) => setActivity(e.target.value)}
-              rows={3}
+              rows={2}
+              className="resize-none text-sm"
+              autoFocus
             />
           </div>
 
+          {/* 컨디션 선택 - 간소화 */}
           <div className="space-y-2">
-            <Label>컨디션 (1-7)</Label>
-            <div className="grid grid-cols-7 gap-1">
-              {conditionLabels.map((label, index) => (
-                <Button
-                  key={index}
-                  variant={conditionScore === index + 1 ? "default" : "outline"}
-                  size="sm"
-                  className="h-12 text-xs p-1"
-                  onClick={() => setConditionScore(index + 1)}
+            <Label className="text-xs text-muted-foreground flex items-center gap-1">
+              <Hash className="h-3 w-3" />
+              컨디션
+            </Label>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5, 6, 7].map((level) => (
+                <button
+                  key={level}
+                  onClick={() => setConditionScore(level)}
+                  className={`
+                    flex-1 h-10 rounded-sm border text-xs font-medium transition-all
+                    ${conditionScore === level 
+                      ? 'bg-primary text-primary-foreground border-primary' 
+                      : 'bg-background border-border hover:bg-accent'
+                    }
+                  `}
                 >
-                  <div className="text-center">
-                    <div className="font-bold">{index + 1}</div>
-                    <div className="text-xs leading-tight">{label}</div>
-                  </div>
-                </Button>
+                  {level}
+                </button>
               ))}
             </div>
+            <p className="text-[10px] text-muted-foreground text-center">
+              1 (나쁨) ← {conditionScore} → 7 (좋음)
+            </p>
           </div>
 
-          <div className="flex gap-2">
-            <Button onClick={handleSave} disabled={isLoading} className="flex-1">
+          {/* 액션 버튼 */}
+          <div className="flex gap-2 pt-2">
+            <Button 
+              onClick={handleSave} 
+              disabled={isLoading} 
+              className="flex-1 h-10"
+              size="sm"
+            >
               {isLoading ? "저장 중..." : "저장"}
             </Button>
 
             {slot.id && (
-              <Button variant="destructive" onClick={handleDelete} disabled={isLoading}>
+              <Button 
+                variant="outline" 
+                onClick={handleDelete} 
+                disabled={isLoading}
+                size="sm"
+                className="h-10"
+              >
                 삭제
               </Button>
             )}
 
-            <Button variant="outline" onClick={onClose}>
+            <Button 
+              variant="ghost" 
+              onClick={onClose}
+              size="sm"
+              className="h-10"
+            >
               취소
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }
