@@ -136,3 +136,35 @@ self.addEventListener("notificationclick", (event) => {
     })
   )
 })
+
+// Web Push 이벤트 처리
+self.addEventListener('push', (event) => {
+  console.log('[SW] Push received:', event)
+  
+  let data = {
+    title: '15분 플래너',
+    body: '시간을 기록해주세요!',
+    icon: '/icon-192x192.png',
+    badge: '/icon-192x192.png'
+  }
+  
+  if (event.data) {
+    try {
+      data = event.data.json()
+    } catch (e) {
+      console.error('Push data parse error:', e)
+    }
+  }
+  
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: data.icon,
+      badge: data.badge,
+      vibrate: [200, 100, 200],
+      requireInteraction: true,
+      tag: 'push-notification',
+      data: data.data || { url: '/' }
+    })
+  )
+})

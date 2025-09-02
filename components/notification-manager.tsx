@@ -226,6 +226,18 @@ export function NotificationManager({ isSessionActive, onPermissionChange }: Not
           </div>
         )}
 
+        {/* iOS 저전력 모드 안내 */}
+        {permission === "granted" && /iPad|iPhone|iPod/.test(navigator.userAgent) && (
+          <div className="text-xs bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2">
+            <p className="font-medium mb-1">📱 iOS 저전력 모드 사용자:</p>
+            <ul className="list-disc list-inside space-y-0.5 text-[11px]">
+              <li>저전력 모드에서는 백그라운드 알림 제한</li>
+              <li>캘린더 알림 또는 단축어 사용 권장</li>
+              <li>앱 실행 중에는 소리/진동 알림 가능</li>
+            </ul>
+          </div>
+        )}
+        
         {permission === "granted" && (
           <Button
             variant="outline"
