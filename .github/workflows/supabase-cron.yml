@@ -1,0 +1,23 @@
+name: Supabase Push Notifications
+
+on:
+  schedule:
+    # 15분마다 실행
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # 수동 실행 가능
+
+jobs:
+  trigger-push:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Trigger Supabase Edge Function
+        run: |
+          curl -X POST \
+            ${{ secrets.SUPABASE_FUNCTION_URL }} \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{}'
+      
+      - name: Log execution
+        run: echo "Push notification triggered at $(date)"
