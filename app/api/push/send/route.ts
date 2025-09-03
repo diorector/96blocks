@@ -5,14 +5,23 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import webpush from "web-push"
 
-// VAPID 설정
-webpush.setVapidDetails(
-  `mailto:${process.env.VAPID_EMAIL || 'your-email@example.com'}`,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-)
+// VAPID 설정 - 빌드 시 환경변수 체크
+if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    `mailto:${process.env.VAPID_EMAIL || 'your-email@example.com'}`,
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  )
+}
 
 export async function POST(request: NextRequest) {
+  // VAPID 키 확인
+  if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+    return NextResponse.json({ 
+      error: "Push notifications not configured (missing VAPID keys)" 
+    }, { status: 501 })
+  }
+
   try {
     const { userId, title, body, icon, badge, tag } = await request.json()
     
@@ -56,6 +65,14 @@ export async function POST(request: NextRequest) {
 
 // 모든 활성 사용자에게 푸시 전송 (크론잡용)
 export async function GET(request: NextRequest) {
+  // VAPID 키 확인
+  if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+    return NextResponse.json({ 
+      message: "Push notifications not configured - skipping",
+      reason: "Missing VAPID keys in environment variables"
+    })
+  }
+
   try {
     const now = new Date()
     const hours = now.getHours()
