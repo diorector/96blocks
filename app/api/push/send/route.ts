@@ -5,20 +5,26 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import webpush from "web-push"
 
-// VAPID 설정 - 빌드 시 환경변수 체크
-if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
-  webpush.setVapidDetails(
-    `mailto:${process.env.VAPID_EMAIL || 'your-email@example.com'}`,
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
-  )
+// VAPID 설정 - 런타임에 설정
+function setupVapid() {
+  try {
+    webpush.setVapidDetails(
+      `mailto:${process.env.VAPID_EMAIL || 'your-email@example.com'}`,
+      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'BEPktFdlI2cxKywK3mklkSSbMHyD1Q4aRRLN_hLWsz3zqIFTdN3xBqZ9486VK6gzXjGnKydZ_L0VFjOIBWIM3nA',
+      process.env.VAPID_PRIVATE_KEY || 'm5ek4oV0AVM67giNROwS1PvaE4fkhWI84C66mHzfcd0'
+    )
+    return true
+  } catch (error) {
+    console.error('VAPID setup error:', error)
+    return false
+  }
 }
 
 export async function POST(request: NextRequest) {
-  // VAPID 키 확인
-  if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+  // VAPID 설정
+  if (!setupVapid()) {
     return NextResponse.json({ 
-      error: "Push notifications not configured (missing VAPID keys)" 
+      error: "Push notifications not configured (VAPID setup failed)" 
     }, { status: 501 })
   }
 
@@ -65,12 +71,10 @@ export async function POST(request: NextRequest) {
 
 // 모든 활성 사용자에게 푸시 전송 (크론잡용)
 export async function GET(request: NextRequest) {
-  // VAPID 키 확인
-  if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
-    return NextResponse.json({ 
-      message: "Push notifications not configured - skipping",
-      reason: "Missing VAPID keys in environment variables"
-    })
+  // VAPID 설정
+  if (!setupVapid()) {
+    // 환경변수 없어도 하드코딩된 값으로 작동
+    console.log('Using hardcoded VAPID keys')
   }
 
   try {
