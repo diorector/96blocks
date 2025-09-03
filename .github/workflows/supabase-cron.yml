@@ -11,13 +11,30 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+      - name: Check secrets
+        run: |
+          if [ -z "${{ secrets.SUPABASE_FUNCTION_URL }}" ]; then
+            echo "Error: SUPABASE_FUNCTION_URL secret is not set"
+            echo "Please add it in GitHub Settings -> Secrets -> Actions"
+            exit 1
+          fi
+          if [ -z "${{ secrets.SUPABASE_ANON_KEY }}" ]; then
+            echo "Error: SUPABASE_ANON_KEY secret is not set"
+            echo "Please add it in GitHub Settings -> Secrets -> Actions"
+            exit 1
+          fi
+          echo "Secrets are configured"
+      
       - name: Trigger Supabase Edge Function
         run: |
           curl -X POST \
-            ${{ secrets.SUPABASE_FUNCTION_URL }} \
+            "${{ secrets.SUPABASE_FUNCTION_URL }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "Content-Type: application/json" \
-            -d '{}'
+            -d '{}' \
+            -f \
+            -S \
+            --show-error
       
       - name: Log execution
         run: echo "Push notification triggered at $(date)"
