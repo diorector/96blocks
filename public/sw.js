@@ -25,8 +25,16 @@ self.addEventListener("activate", (event) => {
   self.clients.claim()
 })
 
-// Fetch event
+// Fetch event - API 요청은 캐시하지 않음
 self.addEventListener("fetch", (event) => {
+  // API 요청이나 외부 요청은 직접 fetch
+  if (event.request.url.includes('/api/') || 
+      event.request.url.includes('supabase') ||
+      !event.request.url.startsWith(self.location.origin)) {
+    return
+  }
+  
+  // 정적 리소스만 캐시 체크
   event.respondWith(
     caches.match(event.request).then((response) => {
       return response || fetch(event.request)
@@ -137,13 +145,13 @@ self.addEventListener("notificationclick", (event) => {
   )
 })
 
-// Web Push 이벤트 처리
+// Web Push 이벤트 처리 - 개선된 버전
 self.addEventListener('push', (event) => {
   console.log('[SW] Push received:', event)
   
   let data = {
-    title: '15분 플래너',
-    body: '시간을 기록해주세요!',
+    title: '⏰ 15분 체크인',
+    body: '지금 무엇을 하고 계신가요?',
     icon: '/icon-192x192.png',
     badge: '/icon-192x192.png'
   }
@@ -156,15 +164,27 @@ self.addEventListener('push', (event) => {
     }
   }
   
+  const options = {
+    body: data.body,
+    icon: data.icon,
+    badge: data.badge,
+    vibrate: [200, 100, 200],
+    requireInteraction: true,
+    tag: data.tag || 'push-notification',
+    data: data.data || { url: '/' },
+    actions: [
+      {
+        action: 'record',
+        title: '기록하기'
+      },
+      {
+        action: 'dismiss', 
+        title: '나중에'
+      }
+    ]
+  }
+  
   event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: data.icon,
-      badge: data.badge,
-      vibrate: [200, 100, 200],
-      requireInteraction: true,
-      tag: 'push-notification',
-      data: data.data || { url: '/' }
-    })
+    self.registration.showNotification(data.title, options)
   )
 })

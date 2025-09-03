@@ -12,6 +12,7 @@ import { TimeSlotGrid } from "@/components/time-slot-grid"
 import { DayControls } from "@/components/day-controls"
 import { NotificationManager } from "@/components/notification-manager"
 import { DataAnalytics } from "@/components/data-analytics"
+import { PushSettings } from "@/components/push-settings"
 import { InstallPrompt } from "@/components/install-prompt"
 import { createClient } from "@/lib/supabase/client"
 import { format, addDays, subDays, startOfDay } from "date-fns"
@@ -156,7 +157,7 @@ export function TimeSlotPlanner({ user }: TimeSlotPlannerProps) {
       </Card>
 
       <Tabs defaultValue="daily" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="daily" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             일별 기록
@@ -164,6 +165,9 @@ export function TimeSlotPlanner({ user }: TimeSlotPlannerProps) {
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             분석
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            🔔 알림
           </TabsTrigger>
         </TabsList>
 
@@ -249,6 +253,10 @@ export function TimeSlotPlanner({ user }: TimeSlotPlannerProps) {
 
         <TabsContent value="analytics" className="space-y-4">
           <DataAnalytics userId={currentUser.id} />
+        </TabsContent>
+        
+        <TabsContent value="notifications" className="space-y-4">
+          <PushSettings user={currentUser} />
         </TabsContent>
       </Tabs>
     </div>

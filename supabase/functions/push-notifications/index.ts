@@ -1,5 +1,5 @@
-// Supabase Edge Function - 간단한 푸시 알림
-// 2025-09-03 05:30 KST - 실제 작동하는 버전
+// Supabase Edge Function - 푸시 알림 전송
+// 2025-09-03 06:45 KST - Next.js API 라우트 호출 방식
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
@@ -19,7 +19,6 @@ serve(async (req) => {
     const hours = now.getHours()
     const minutes = now.getMinutes()
     
-    // 테스트를 위해 모든 요청 로그
     console.log(`[Push Function] Called at ${hours}:${minutes}`)
     
     // 야간 시간 제외 (23시 ~ 6시)
@@ -33,15 +32,24 @@ serve(async (req) => {
       )
     }
 
-    // 여기에 실제 푸시 로직 추가
-    // 1. 활성 사용자 찾기
-    // 2. 푸시 구독 정보 가져오기  
-    // 3. 푸시 전송
+    // Next.js API 라우트 호출하여 실제 푸시 전송
+    // 프로덕션 URL로 변경 필요
+    const NEXT_APP_URL = Deno.env.get('NEXT_APP_URL') || 'https://your-app.vercel.app'
+    
+    const response = await fetch(`${NEXT_APP_URL}/api/push/send`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+
+    const result = await response.json()
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: 'Push notifications would be sent',
+        message: 'Push notifications sent',
+        result: result,
         time: `${hours}:${minutes}`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -21,9 +21,7 @@ supabase functions deploy push-notifications
 1. **Edge Functions** → **push-notifications** → **Secrets**
 2. 추가할 변수:
 ```
-VAPID_PUBLIC_KEY=BEPktFdlI2cxKywK3mklkSSbMHyD1Q4aRRLN_hLWsz3zqIFTdN3xBqZ9486VK6gzXjGnKydZ_L0VFjOIBWIM3nA
-VAPID_PRIVATE_KEY=m5ek4oV0AVM67giNROwS1PvaE4fkhWI84C66mHzfcd0
-VAPID_EMAIL=your-email@example.com
+NEXT_APP_URL=https://your-app.vercel.app
 ```
 
 ## 5️⃣ Database Webhooks로 자동 실행 (대안)
@@ -66,6 +64,10 @@ CREATE TABLE IF NOT EXISTS cron_triggers (
 5. HTTP Method: POST
 6. Headers:
    - Authorization: `Bearer YOUR-ANON-KEY`
+
+### 중요: Next.js 앱 URL 설정
+Supabase Dashboard에서 Edge Function의 Secrets에 추가:
+- `NEXT_APP_URL`: Vercel에 배포된 Next.js 앱의 URL
 
 ### Option B: GitHub Actions (무료)
 `.github/workflows/cron.yml` 생성:
